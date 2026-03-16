@@ -29,6 +29,9 @@ export default function EventScorePage() {
   const eventId = params?.id;
 
   const [rows, setRows] = useState<ScoreRow[]>([]);
+  const [teamsFromMaster, setTeamsFromMaster] = useState<
+    { teamId: string; teamName: string }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -39,14 +42,40 @@ export default function EventScorePage() {
       setLoading(true);
       setErrorMessage("");
       try {
-        const res = await fetch(`/api/events/${encodeURIComponent(eventId)}/scores`);
-        const body = await res.json().catch(() => ({} as any));
-        if (!res.ok) throw new Error(body?.message ?? "スコア取得に失敗しました");
-        if (!cancelled) setRows(Array.isArray(body?.rows) ? body.rows : []);
+        const [scoresRes, teamsRes] = await Promise.all([
+          fetch(`/api/events/${encodeURIComponent(eventId)}/scores`),
+          fetch(`/api/events/${encodeURIComponent(eventId)}/teams`),
+        ]);
+
+        const scoresBody = await scoresRes.json().catch(() => ({} as any));
+        const teamsBody = await teamsRes.json().catch(() => ({} as any));
+
+        if (!scoresRes.ok) {
+          throw new Error(scoresBody?.message ?? "スコア取得に失敗しました");
+        }
+        if (!teamsRes.ok) {
+          throw new Error(teamsBody?.message ?? "チーム取得に失敗しました");
+        }
+
+        if (!cancelled) {
+          setRows(Array.isArray(scoresBody?.rows) ? scoresBody.rows : []);
+          const masters: { teamId: string; teamName: string }[] = Array.isArray(
+            teamsBody?.teams
+          )
+            ? teamsBody.teams.map((t: any) => ({
+              teamId: String(t.id),
+              teamName: String(t.name ?? ""),
+            }))
+            : [];
+          setTeamsFromMaster(masters);
+        }
       } catch (e) {
         if (!cancelled) {
-          setErrorMessage(e instanceof Error ? e.message : "スコア取得に失敗しました");
+          setErrorMessage(
+            e instanceof Error ? e.message : "スコア情報の取得に失敗しました"
+          );
           setRows([]);
+          setTeamsFromMaster([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -96,6 +125,13 @@ export default function EventScorePage() {
       totalMap.get(teamId)!.total += add;
     }
 
+    // マスタ側のチームもマージして「チーム一覧」とする
+    for (const mt of teamsFromMaster) {
+      if (!teamMap.has(mt.teamId)) {
+        teamMap.set(mt.teamId, mt);
+      }
+    }
+
     const teamsArr = Array.from(teamMap.values()).sort((a, b) =>
       a.teamName.localeCompare(b.teamName, "ja")
     );
@@ -107,7 +143,7 @@ export default function EventScorePage() {
     );
 
     return { teams: teamsArr, games: gamesArr, scoreMap: sMap, totals: totalsArr };
-  }, [rows]);
+  }, [rows, teamsFromMaster]);
 
   return (
     <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black">
@@ -145,6 +181,41 @@ export default function EventScorePage() {
                   チーム登録
                 </button>
               )}
+            </div>
+          ) : games.length === 0 ? (
+            <div className="space-y-6">
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                スコア未登録のチーム一覧
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                      <th className="py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200">
+                        チーム
+                      </th>
+                      <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
+                        スコア
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teams.map((t) => (
+                      <tr
+                        key={t.teamId}
+                        className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-900"
+                      >
+                        <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
+                          {t.teamName || "(不明)"}
+                        </td>
+                        <td className="py-2 text-zinc-900 dark:text-zinc-50">
+                          未登録
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <div className="space-y-10">
