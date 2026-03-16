@@ -206,6 +206,7 @@ export default function ScoreRegistPage() {
                         onChange={(e) =>
                           handleChangeScore(key, "rank", e.target.value)
                         }
+                        min={0}
                         placeholder="順位P"
                       />
                       <input
@@ -217,6 +218,7 @@ export default function ScoreRegistPage() {
                           handleChangeScore(key, "kill", e.target.value)
                         }
                         placeholder="キル数"
+                        min={0}
                       />
                       <div className="w-1/6 text-right text-base text-zinc-900 dark:text-zinc-50">
                         {total}
