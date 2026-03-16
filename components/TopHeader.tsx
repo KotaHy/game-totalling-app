@@ -2,6 +2,7 @@ import SearchIcon from "@mui/icons-material/Search";
 interface TopHeaderProps {
   onMyPage: () => void;
   onLogout: () => void;
+  onEventRegist?: () => void;
   onSearchUserTasks?: () => void;
   isAdmin?: boolean;
   onBackToTop?: () => void;
@@ -10,6 +11,7 @@ interface TopHeaderProps {
 export default function TopHeader({
   onMyPage,
   onLogout,
+  onEventRegist,
   onSearchUserTasks,
   isAdmin = false,
   onBackToTop,
@@ -29,14 +31,15 @@ export default function TopHeader({
           )}
         </div>
         <div className="flex items-center gap-3">
-          {isAdmin && onSearchUserTasks && (
+
+          {onEventRegist && (
             <button
               type="button"
-              onClick={onSearchUserTasks}
-              className="flex items-center justify-center rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-              aria-label="ユーザーごとのタスク検索"
+              onClick={onEventRegist}
+              aria-label="イベント登録"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-300 bg-white text-lg font-semibold text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
             >
-              <SearchIcon fontSize="small" aria-hidden="true" />
+              ＋
             </button>
           )}
           <button
