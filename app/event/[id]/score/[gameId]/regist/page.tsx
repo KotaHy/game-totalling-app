@@ -130,10 +130,10 @@ export default function ScoreRegistPage() {
         }
       />
 
-      <main className="flex flex-1 items-center justify-center px-6 py-6">
-        <div className="w-full max-w-xl">
+      <main className="flex-1 px-3 pb-3 pt-16 sm:px-6 sm:pb-4 sm:pt-20">
+        <div className="mx-auto w-full max-w-3xl">
           <div className="flex items-center justify-between gap-4">
-            <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
               スコア登録（試合: {gameId}）
             </h1>
             <div className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-200">
@@ -154,7 +154,7 @@ export default function ScoreRegistPage() {
 
           <form
             onSubmit={handleSubmit}
-            className="mt-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+            className="mt-3 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
           >
             {loading ? (
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
@@ -165,8 +165,8 @@ export default function ScoreRegistPage() {
                 チームが登録されていません
               </p>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
                   <div className="w-1/3">チーム</div>
                   <div className="w-1/4 text-right">順位P</div>
                   <div className="w-1/4 text-right">キル数</div>
@@ -178,13 +178,13 @@ export default function ScoreRegistPage() {
                   const total = calcTotal(detail);
                   return (
                     <div key={key} className="flex items-center gap-3">
-                      <div className="w-1/3 text-sm text-zinc-900 dark:text-zinc-50">
+                      <div className="w-1/3 text-base text-zinc-900 dark:text-zinc-50">
                         {t.name || "(不明)"}
                       </div>
                       <input
                         type="number"
                         inputMode="numeric"
-                        className="w-1/4 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                        className="w-1/4 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-base text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                         value={detail?.rank ?? ""}
                         onChange={(e) =>
                           handleChangeScore(key, "rank", e.target.value)
@@ -194,14 +194,14 @@ export default function ScoreRegistPage() {
                       <input
                         type="number"
                         inputMode="numeric"
-                        className="w-1/4 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                        className="w-1/4 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-base text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                         value={detail?.kill ?? ""}
                         onChange={(e) =>
                           handleChangeScore(key, "kill", e.target.value)
                         }
                         placeholder="キル数"
                       />
-                      <div className="w-1/6 text-right text-sm text-zinc-900 dark:text-zinc-50">
+                      <div className="w-1/6 text-right text-base text-zinc-900 dark:text-zinc-50">
                         {total}
                       </div>
                     </div>
