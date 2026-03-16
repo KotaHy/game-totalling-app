@@ -161,9 +161,26 @@ export default function ScoreRegistPage() {
                 読み込み中...
               </p>
             ) : teams.length === 0 ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                チームが登録されていません
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  チームが登録されていません
+                </p>
+                {eventId && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        `/event/${encodeURIComponent(
+                          String(eventId)
+                        )}/team/regist`
+                      )
+                    }
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+                  >
+                    チーム登録
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
