@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import TopHeader from "@/components/TopHeader";
+import Link from "next/link";
 
 type EventRow = {
   id: number | string;
@@ -131,7 +132,12 @@ export default function Top() {
                       className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-900"
                     >
                       <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
-                        {String(ev.id)}
+                        <Link
+                          href={`/event/${encodeURIComponent(String(ev.id))}/score`}
+                          className="text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {String(ev.id)}
+                        </Link>
                       </td>
                       <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
                         {ev.name ?? ""}
