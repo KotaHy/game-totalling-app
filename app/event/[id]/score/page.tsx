@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import TopHeader from "@/components/TopHeader";
+import PageLayout from "@/components/PageLayout";
+import PageCard from "@/components/ui/PageCard";
+import ErrorMessage from "@/components/ui/ErrorMessage";
 
 type ScoreRow = {
   score: number | string | null;
@@ -11,17 +13,15 @@ type ScoreRow = {
   team_info?: { id: number | string; name: string | null } | null;
 };
 
-type TeamGroup = {
-  teamId: string;
-  teamName: string;
-  rows: { gameId: string; score: string }[];
-};
-
 function formatGameLabel(gameId: string) {
   const trimmed = (gameId ?? "").trim();
   if (!trimmed) return "-";
   return `第${trimmed}試合`;
 }
+
+const TH_CLASS = "py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200";
+const TD_CLASS = "py-2 pr-4 text-zinc-900 dark:text-zinc-50";
+const ROW_CLASS = "border-b border-zinc-100 last:border-b-0 dark:border-zinc-900";
 
 export default function EventScorePage() {
   const router = useRouter();
@@ -30,10 +30,11 @@ export default function EventScorePage() {
 
   const [rows, setRows] = useState<ScoreRow[]>([]);
   const [teamsFromMaster, setTeamsFromMaster] = useState<
-    { teamId: string; teamName: string }[]
+    { teamId: string; teamName: string; members: string[] }[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showTeamList, setShowTeamList] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -59,13 +60,16 @@ export default function EventScorePage() {
 
         if (!cancelled) {
           setRows(Array.isArray(scoresBody?.rows) ? scoresBody.rows : []);
-          const masters: { teamId: string; teamName: string }[] = Array.isArray(
+          const masters: { teamId: string; teamName: string; members: string[] }[] = Array.isArray(
             teamsBody?.teams
           )
             ? teamsBody.teams.map((t: any) => ({
-              teamId: String(t.id),
-              teamName: String(t.name ?? ""),
-            }))
+                teamId: String(t.id),
+                teamName: String(t.name ?? ""),
+                members: Array.isArray(t.member_info)
+                  ? t.member_info.map((m: any) => String(m.name ?? ""))
+                  : [],
+              }))
             : [];
           setTeamsFromMaster(masters);
         }
@@ -86,21 +90,14 @@ export default function EventScorePage() {
     };
   }, [eventId]);
 
-  const {
-    teams,
-    games,
-    scoreMap,
-    totals,
-  }: {
-    teams: { teamId: string; teamName: string }[];
-    games: string[];
-    scoreMap: Map<string, Map<string, string>>; // gameId -> teamId -> score
-    totals: { teamId: string; teamName: string; total: number }[];
-  } = useMemo(() => {
+  const { teams, games, scoreMap, totals } = useMemo(() => {
     const teamMap = new Map<string, { teamId: string; teamName: string }>();
     const gameSet = new Set<string>();
     const sMap = new Map<string, Map<string, string>>();
-    const totalMap = new Map<string, { teamId: string; teamName: string; total: number }>();
+    const totalMap = new Map<
+      string,
+      { teamId: string; teamName: string; total: number }
+    >();
 
     for (const r of rows) {
       const teamId = String(r.team_info?.id ?? r.team_id ?? "");
@@ -112,9 +109,7 @@ export default function EventScorePage() {
       teamMap.set(teamId, { teamId, teamName });
       gameSet.add(gameId);
 
-      if (!sMap.has(gameId)) {
-        sMap.set(gameId, new Map<string, string>());
-      }
+      if (!sMap.has(gameId)) sMap.set(gameId, new Map<string, string>());
       sMap.get(gameId)!.set(teamId, scoreStr);
 
       const value = Number(scoreStr);
@@ -125,11 +120,8 @@ export default function EventScorePage() {
       totalMap.get(teamId)!.total += add;
     }
 
-    // マスタ側のチームもマージして「チーム一覧」とする
     for (const mt of teamsFromMaster) {
-      if (!teamMap.has(mt.teamId)) {
-        teamMap.set(mt.teamId, mt);
-      }
+      if (!teamMap.has(mt.teamId)) teamMap.set(mt.teamId, mt);
     }
 
     const teamsArr = Array.from(teamMap.values()).sort((a, b) =>
@@ -145,195 +137,235 @@ export default function EventScorePage() {
     return { teams: teamsArr, games: gamesArr, scoreMap: sMap, totals: totalsArr };
   }, [rows, teamsFromMaster]);
 
+  const handleScoreRegist = () => {
+    if (!eventId) return;
+    const nextGame =
+      games.length > 0 ? String(Number(games[games.length - 1]) + 1) : "1";
+    router.push(
+      `/event/${encodeURIComponent(String(eventId))}/score/${encodeURIComponent(nextGame)}/regist`
+    );
+  };
+
+  const handleTeamRegist = () => {
+    if (!eventId) return;
+    router.push(`/event/${encodeURIComponent(String(eventId))}/team/regist`);
+  };
+
   return (
-    <div className="flex min-h-screen bg-zinc-50 font-sans dark:bg-black">
-      <TopHeader
-        onMyPage={() => router.push("/top")}
-        onLogout={() => router.push("/")}
-        onBackToTop={() => router.push("/top")}
-      />
+    <PageLayout
+      onMyPage={() => router.push("/top")}
+      onLogout={() => router.push("/")}
+      onBackToTop={() => router.push("/top")}
+    >
+      <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        スコア一覧（イベントID: {eventId}）
+      </h1>
 
-      <main className="flex-1 px-6 py-6">
-        <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-          スコア一覧（イベントID: {eventId}）
-        </h1>
-
-        <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-          {loading ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">読み込み中...</p>
-          ) : errorMessage ? (
-            <p className="text-sm text-red-600 dark:text-red-400">{errorMessage}</p>
-          ) : teams.length === 0 ? (
+      <PageCard className="mt-4">
+        {loading ? (
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">読み込み中...</p>
+        ) : errorMessage ? (
+          <ErrorMessage message={errorMessage} />
+        ) : teams.length === 0 ? (
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">
+              チームが未登録です
+            </p>
+            {eventId && (
+              <button
+                type="button"
+                onClick={handleTeamRegist}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+              >
+                チーム登録
+              </button>
+            )}
+          </div>
+        ) : games.length === 0 ? (
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                スコアがありません
-              </p>
-              {eventId && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    router.push(
-                      `/event/${encodeURIComponent(String(eventId))}/team/regist`
-                    )
-                  }
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
-                >
-                  チーム登録
-                </button>
-              )}
-            </div>
-          ) : games.length === 0 ? (
-            <div className="space-y-6">
               <p className="text-sm text-zinc-600 dark:text-zinc-300">
                 スコア未登録のチーム一覧
               </p>
-              <div className="overflow-x-auto">
+              {eventId && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTeamRegist}
+                    className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    チーム編集
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleScoreRegist}
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+                  >
+                    スコア登録
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full table-auto border-collapse text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                    <th className={TH_CLASS}>チーム</th>
+                    <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
+                      スコア
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {teams.map((t) => (
+                    <tr key={t.teamId} className={ROW_CLASS}>
+                      <td className={TD_CLASS}>{t.teamName || "(不明)"}</td>
+                      <td className="py-2 text-zinc-900 dark:text-zinc-50">未登録</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-10">
+            {/* 試合ごとの各チームスコア一覧（ピボット） */}
+            <section>
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                  試合ごとのスコア一覧
+                </h2>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowTeamList(true)}
+                    className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    チーム一覧
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleScoreRegist}
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+                  >
+                    スコア登録
+                  </button>
+                </div>
+              </div>
+              <div className="mt-2 overflow-x-auto">
                 <table className="w-full table-auto border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                      <th className="py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200">
-                        チーム
-                      </th>
-                      <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
-                        スコア
-                      </th>
+                      <th className={TH_CLASS}>チーム</th>
+                      {games.map((g) => (
+                        <th
+                          key={g}
+                          className="py-2 px-3 text-left font-medium text-zinc-700 dark:text-zinc-200"
+                        >
+                          {formatGameLabel(g)}
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {teams.map((t) => (
-                      <tr
-                        key={t.teamId}
-                        className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-900"
-                      >
-                        <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
-                          {t.teamName || "(不明)"}
-                        </td>
+                      <tr key={t.teamId} className={ROW_CLASS}>
+                        <td className={TD_CLASS}>{t.teamName || "(不明)"}</td>
+                        {games.map((g) => (
+                          <td
+                            key={`${t.teamId}-${g}`}
+                            className="py-2 px-3 text-zinc-900 dark:text-zinc-50"
+                          >
+                            {scoreMap.get(g)?.get(t.teamId) || "-"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* 全試合の合計スコアランキング */}
+            <section>
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                合計スコアランキング
+              </h2>
+              <div className="mt-2 overflow-x-auto">
+                <table className="w-full table-auto border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                      <th className={TH_CLASS}>順位</th>
+                      <th className={TH_CLASS}>チーム</th>
+                      <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
+                        合計スコア
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {totals.map((t, index) => (
+                      <tr key={t.teamId} className={ROW_CLASS}>
+                        <td className={TD_CLASS}>{index + 1}</td>
+                        <td className={TD_CLASS}>{t.teamName || "(不明)"}</td>
                         <td className="py-2 text-zinc-900 dark:text-zinc-50">
-                          未登録
+                          {t.total}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-10">
-              {/* 試合ごとの各チームスコア一覧（ピボット） */}
-              <section>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                    試合ごとのスコア一覧
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!eventId) return;
-                      const nextGame =
-                        games.length > 0
-                          ? String(Number(games[games.length - 1]) + 1)
-                          : "1";
-                      router.push(
-                        `/event/${encodeURIComponent(
-                          String(eventId)
-                        )}/score/${encodeURIComponent(nextGame)}/regist`
-                      );
-                    }}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
-                  >
-                    スコア登録
-                  </button>
-                </div>
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full table-auto border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                        <th className="py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200">
-                          チーム
-                        </th>
-                        {games.map((g) => (
-                          <th
-                            key={g}
-                            className="py-2 px-3 text-left font-medium text-zinc-700 dark:text-zinc-200"
-                          >
-                            {formatGameLabel(g)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {teams.map((t) => (
-                        <tr
-                          key={t.teamId}
-                          className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-900"
-                        >
-                          <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
-                            {t.teamName || "(不明)"}
-                          </td>
-                          {games.map((g) => {
-                            const val = scoreMap.get(g)?.get(t.teamId) ?? "";
-                            return (
-                              <td
-                                key={`${t.teamId}-${g}`}
-                                className="py-2 px-3 text-zinc-900 dark:text-zinc-50"
-                              >
-                                {val || "-"}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+            </section>
+          </div>
+        )}
+      </PageCard>
 
-              {/* 全試合の合計スコアランキング */}
-              <section>
-                <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                  合計スコアランキング
-                </h2>
-                <div className="mt-2 overflow-x-auto">
-                  <table className="w-full table-auto border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                        <th className="py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200">
-                          順位
-                        </th>
-                        <th className="py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200">
-                          チーム
-                        </th>
-                        <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
-                          合計スコア
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {totals.map((t, index) => (
-                        <tr
-                          key={t.teamId}
-                          className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-900"
-                        >
-                          <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
-                            {index + 1}
-                          </td>
-                          <td className="py-2 pr-4 text-zinc-900 dark:text-zinc-50">
-                            {t.teamName || "(不明)"}
-                          </td>
-                          <td className="py-2 text-zinc-900 dark:text-zinc-50">
-                            {t.total}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+      {showTeamList && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setShowTeamList(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                チーム一覧（イベントID: {eventId}）
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowTeamList(false)}
+                className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-100"
+              >
+                ✕
+              </button>
             </div>
-          )}
+            {teamsFromMaster.length === 0 ? (
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">チームがありません</p>
+            ) : (
+              <ul className="divide-y divide-zinc-100 dark:divide-zinc-800 max-h-96 overflow-y-auto">
+                {teamsFromMaster.map((t, i) => (
+                  <li key={t.teamId} className="py-2">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {i + 1}. {t.teamName || "(不明)"}
+                    </p>
+                    {(t.members ?? []).length > 0 && (
+                      <ul className="mt-1 ml-4 space-y-0.5">
+                        {(t.members ?? []).map((m, j) => (
+                          <li key={j} className="text-xs text-zinc-500 dark:text-zinc-400">
+                            ・{m}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
-      </main>
-    </div>
+      )}
+    </PageLayout>
   );
 }
-

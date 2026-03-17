@@ -1,4 +1,3 @@
-import SearchIcon from "@mui/icons-material/Search";
 interface TopHeaderProps {
   onMyPage: () => void;
   onLogout: () => void;
@@ -47,7 +46,7 @@ export default function TopHeader({
             onClick={onMyPage}
             className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
           >
-            ユーザ
+            ユーザ編集
           </button>
           <button
             type="button"

@@ -2,6 +2,9 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import FormField from "@/components/ui/FormField";
+import ErrorMessage from "@/components/ui/ErrorMessage";
+import SubmitButton from "@/components/ui/SubmitButton";
 
 export default function Login() {
     const router = useRouter();
@@ -28,10 +31,9 @@ export default function Login() {
             });
 
             if (res.ok) {
-                // ログイン成功
                 const data = await res.json();
                 if (data.userId) {
-                    localStorage.setItem("userId", data.userId); // userId を保存
+                    localStorage.setItem("userId", data.userId);
                 }
                 router.push("/top");
                 router.refresh();
@@ -39,7 +41,7 @@ export default function Login() {
                 const body = await res.json().catch(() => ({}));
                 setErrorMessage(body.message ?? "ログインに失敗しました");
             }
-        } catch (err) {
+        } catch {
             setErrorMessage("通信エラーが発生しました");
         } finally {
             setLoading(false);
@@ -54,51 +56,28 @@ export default function Login() {
                 </h1>
 
                 <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-                    <div className="flex flex-col gap-1">
-                        <label
-                            htmlFor="username"
-                            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                        >
-                            ユーザー名
-                        </label>
-                        <input
-                            id="username"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                            placeholder="ユーザー名を入力"
-                        />
-                    </div>
+                    <FormField
+                        id="username"
+                        label="ユーザー名"
+                        value={username}
+                        onChange={setUsername}
+                        placeholder="ユーザー名を入力"
+                    />
+                    <FormField
+                        id="password"
+                        label="パスワード"
+                        type="password"
+                        value={password}
+                        onChange={setPassword}
+                        placeholder="パスワードを入力"
+                    />
 
-                    <div className="flex flex-col gap-1">
-                        <label
-                            htmlFor="password"
-                            className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                        >
-                            パスワード
-                        </label>
-                        <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                            placeholder="パスワードを入力"
-                        />
-                    </div>
+                    <ErrorMessage message={errorMessage} />
 
-                    {errorMessage && (
-                        <p className="text-sm text-red-500">{errorMessage}</p>
-                    )}
+                    <SubmitButton loading={loading} loadingLabel="ログイン中..." fullWidth className="mt-2 h-11">
+                        ログイン
+                    </SubmitButton>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="mt-2 h-11 rounded-md bg-blue-600 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-black"
-                    >
-                        {loading ? "ログイン中..." : "ログイン"}
-                    </button>
                     <div className="mt-4 text-center">
                         <a href="/users" className="text-sm text-blue-600 hover:underline">
                             新規登録
