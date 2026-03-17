@@ -2,19 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import PageLayout from "@/components/PageLayout";
 import PageCard from "@/components/ui/PageCard";
 import ErrorMessage from "@/components/ui/ErrorMessage";
-
-type EventRow = {
-  id: number | string;
-  name: string | null;
-  execute_date: string | null;
-};
-
-const TH_CLASS = "py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200";
-const TD_CLASS = "py-2 pr-4 text-zinc-900 dark:text-zinc-50";
+import ConfirmModal from "@/components/ui/ConfirmModal";
+import EventTable, { EventRow } from "@/components/event/EventTable";
 
 export default function Top() {
   const router = useRouter();
@@ -64,9 +56,10 @@ export default function Top() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/events/${encodeURIComponent(String(deleteTarget.id))}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/events/${encodeURIComponent(String(deleteTarget.id))}`,
+        { method: "DELETE" }
+      );
       const body = await res.json().catch(() => ({} as any));
       if (!res.ok) throw new Error(body?.message ?? "削除に失敗しました");
       setEvents((prev) => prev.filter((e) => e.id !== deleteTarget.id));
@@ -116,79 +109,23 @@ export default function Top() {
             イベントがありません
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800">
-                  <th className={TH_CLASS}>イベントID</th>
-                  <th className={TH_CLASS}>イベント名</th>
-                  <th className={TH_CLASS}>開催日</th>
-                  <th className="py-2 text-right font-medium text-zinc-700 dark:text-zinc-200"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {events.map((ev) => (
-                  <tr
-                    key={String(ev.id)}
-                    className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-900"
-                  >
-                    <td className={TD_CLASS}>
-                      <Link
-                        href={`/event/${encodeURIComponent(String(ev.id))}/score`}
-                        className="text-blue-600 hover:underline dark:text-blue-400"
-                      >
-                        {String(ev.id)}
-                      </Link>
-                    </td>
-                    <td className={TD_CLASS}>{ev.name ?? ""}</td>
-                    <td className={TD_CLASS}>{ev.execute_date ?? ""}</td>
-                    <td className="py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setDeleteTarget(ev)}
-                        className="rounded-md border border-red-300 px-2 py-1 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
-                      >
-                        削除
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <EventTable events={events} onDeleteClick={setDeleteTarget} />
         )}
       </PageCard>
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900">
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-              イベントの削除
-            </h2>
-            <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-300">
+        <ConfirmModal
+          title="イベントの削除"
+          message={
+            <>
               「{deleteTarget.name}」を削除しますか？<br />
               関連するチーム・メンバー・スコアもすべて削除されます。
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleting}
-                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-              >
-                いいえ
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteConfirm}
-                disabled={deleting}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                {deleting ? "削除中..." : "はい"}
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting}
+        />
       )}
     </PageLayout>
   );

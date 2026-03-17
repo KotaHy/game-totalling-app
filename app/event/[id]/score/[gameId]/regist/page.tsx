@@ -6,19 +6,13 @@ import PageLayout from "@/components/PageLayout";
 import PageCard from "@/components/ui/PageCard";
 import ErrorMessage from "@/components/ui/ErrorMessage";
 import SubmitButton from "@/components/ui/SubmitButton";
+import ScoreRegistRow, { ScoreDetail } from "@/components/event/ScoreRegistRow";
+import { calcTotal } from "@/lib/scoreCalc";
 
 type Team = {
   id: number | string;
   name: string | null;
 };
-
-type ScoreDetail = {
-  rank: string;
-  kill: string;
-};
-
-const NUMBER_INPUT_CLASS =
-  "w-20 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-base text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
 
 export default function ScoreRegistPage() {
   const router = useRouter();
@@ -81,30 +75,6 @@ export default function ScoreRegistPage() {
     }));
   };
 
-  const calcRankPt = (rank: string): number => {
-    const r = Number(rank);
-    if (!Number.isFinite(r) || rank === "") return 0;
-    if (r === 1) return 12;
-    if (r === 2) return 9;
-    if (r === 3) return 7;
-    if (r === 4) return 5;
-    if (r === 5) return 4;
-    if (r <= 7) return 3;
-    if (r <= 10) return 2;
-    if (r <= 15) return 1;
-    return 0;
-  };
-
-  const calcKillPt = (kill: string): number => {
-    const k = Number.isFinite(Number(kill)) && kill !== "" ? Number(kill) : 0;
-    return Math.min(k, killLimit);
-  };
-
-  const calcTotal = (detail: ScoreDetail | undefined) => {
-    if (!detail) return 0;
-    return calcRankPt(detail.rank) + calcKillPt(detail.kill);
-  };
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!eventId || !gameId) return;
@@ -113,10 +83,13 @@ export default function ScoreRegistPage() {
     try {
       const payload = {
         game_id: gameId,
-        scores: teams.map((t) => ({
-          team_id: t.id,
-          score: calcTotal(scores[String(t.id)]),
-        })),
+        scores: teams.map((t) => {
+          const detail = scores[String(t.id)];
+          return {
+            team_id: t.id,
+            score: calcTotal(detail?.rank ?? "", detail?.kill ?? "", killLimit),
+          };
+        }),
       };
 
       const res = await fetch(
@@ -208,47 +181,15 @@ export default function ScoreRegistPage() {
                 </div>
                 {teams.map((t) => {
                   const key = String(t.id);
-                  const detail = scores[key];
-                  const rankPt = calcRankPt(detail?.rank ?? "");
-                  const killPt = calcKillPt(detail?.kill ?? "");
                   return (
-                    <div key={key} className="grid grid-cols-[minmax(8rem,1fr)_5rem_5rem_4rem_4rem_4rem] items-center gap-x-4">
-                      <div className="text-base text-zinc-900 dark:text-zinc-50 text-center">
-                        {t.name || "(不明)"}
-                      </div>
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        className={NUMBER_INPUT_CLASS}
-                        value={detail?.rank ?? ""}
-                        onChange={(e) =>
-                          handleChangeScore(key, "rank", e.target.value)
-                        }
-                        min={1}
-                        max={20}
-                        placeholder="順位"
-                      />
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        className={NUMBER_INPUT_CLASS}
-                        value={detail?.kill ?? ""}
-                        onChange={(e) =>
-                          handleChangeScore(key, "kill", e.target.value)
-                        }
-                        min={0}
-                        placeholder="キル数"
-                      />
-                      <div className="text-right text-base text-zinc-900 dark:text-zinc-50">
-                        {detail?.rank !== "" && detail?.rank !== undefined ? rankPt : "-"}
-                      </div>
-                      <div className="text-right text-base text-zinc-900 dark:text-zinc-50">
-                        {detail?.kill !== "" && detail?.kill !== undefined ? killPt : "-"}
-                      </div>
-                      <div className="text-right text-base font-medium text-zinc-900 dark:text-zinc-50">
-                        {calcTotal(detail)}
-                      </div>
-                    </div>
+                    <ScoreRegistRow
+                      key={key}
+                      teamName={t.name ?? ""}
+                      detail={scores[key]}
+                      killLimit={killLimit}
+                      onChangeRank={(v) => handleChangeScore(key, "rank", v)}
+                      onChangeKill={(v) => handleChangeScore(key, "kill", v)}
+                    />
                   );
                 })}
               </div>
