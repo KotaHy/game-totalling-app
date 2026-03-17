@@ -18,7 +18,7 @@ type ScoreDetail = {
 };
 
 const NUMBER_INPUT_CLASS =
-  "w-1/4 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-base text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+  "w-20 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-right text-base text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
 
 export default function ScoreRegistPage() {
   const router = useRouter();
@@ -81,11 +81,28 @@ export default function ScoreRegistPage() {
     }));
   };
 
+  const calcRankPt = (rank: string): number => {
+    const r = Number(rank);
+    if (!Number.isFinite(r) || rank === "") return 0;
+    if (r === 1) return 12;
+    if (r === 2) return 9;
+    if (r === 3) return 7;
+    if (r === 4) return 5;
+    if (r === 5) return 4;
+    if (r <= 7) return 3;
+    if (r <= 10) return 2;
+    if (r <= 15) return 1;
+    return 0;
+  };
+
+  const calcKillPt = (kill: string): number => {
+    const k = Number.isFinite(Number(kill)) && kill !== "" ? Number(kill) : 0;
+    return Math.min(k, killLimit);
+  };
+
   const calcTotal = (detail: ScoreDetail | undefined) => {
     if (!detail) return 0;
-    const rv = Number.isFinite(Number(detail.rank)) ? Number(detail.rank) : 0;
-    const kvRaw = Number.isFinite(Number(detail.kill)) ? Number(detail.kill) : 0;
-    return rv + Math.min(kvRaw, killLimit);
+    return calcRankPt(detail.rank) + calcKillPt(detail.kill);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -181,18 +198,22 @@ export default function ScoreRegistPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                  <div className="w-1/3">チーム</div>
-                  <div className="w-1/4 text-right">順位</div>
-                  <div className="w-1/4 text-right">キル数</div>
-                  <div className="w-1/6 text-right">合計スコア</div>
+                <div className="grid grid-cols-[minmax(8rem,1fr)_5rem_5rem_4rem_4rem_4rem] items-center gap-x-4 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                  <div className="text-center">チーム</div>
+                  <div className="text-center">順位</div>
+                  <div className="text-center">キル数</div>
+                  <div className="text-center">順位Pt</div>
+                  <div className="text-center">キルPt</div>
+                  <div className="text-center">合計</div>
                 </div>
                 {teams.map((t) => {
                   const key = String(t.id);
                   const detail = scores[key];
+                  const rankPt = calcRankPt(detail?.rank ?? "");
+                  const killPt = calcKillPt(detail?.kill ?? "");
                   return (
-                    <div key={key} className="flex items-center gap-3">
-                      <div className="w-1/3 text-base text-zinc-900 dark:text-zinc-50">
+                    <div key={key} className="grid grid-cols-[minmax(8rem,1fr)_5rem_5rem_4rem_4rem_4rem] items-center gap-x-4">
+                      <div className="text-base text-zinc-900 dark:text-zinc-50 text-center">
                         {t.name || "(不明)"}
                       </div>
                       <input
@@ -203,7 +224,8 @@ export default function ScoreRegistPage() {
                         onChange={(e) =>
                           handleChangeScore(key, "rank", e.target.value)
                         }
-                        min={0}
+                        min={1}
+                        max={20}
                         placeholder="順位"
                       />
                       <input
@@ -217,7 +239,13 @@ export default function ScoreRegistPage() {
                         min={0}
                         placeholder="キル数"
                       />
-                      <div className="w-1/6 text-right text-base text-zinc-900 dark:text-zinc-50">
+                      <div className="text-right text-base text-zinc-900 dark:text-zinc-50">
+                        {detail?.rank !== "" && detail?.rank !== undefined ? rankPt : "-"}
+                      </div>
+                      <div className="text-right text-base text-zinc-900 dark:text-zinc-50">
+                        {detail?.kill !== "" && detail?.kill !== undefined ? killPt : "-"}
+                      </div>
+                      <div className="text-right text-base font-medium text-zinc-900 dark:text-zinc-50">
                         {calcTotal(detail)}
                       </div>
                     </div>
