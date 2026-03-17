@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function EditUserPage() {
   const router = useRouter();
-  const params = useParams();
-  const userId = params.id as string; // URLからユーザーIDを取得
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -15,42 +13,7 @@ export default function EditUserPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  useEffect(() => {
-    if (userId) {
-      fetchUser();
-    }
-  }, [userId]);
-
-  const fetchUser = async () => {
-    setLoading(true);
-    setErrorMessage("");
-    try {
-      const res = await fetch(`/api/users?id=${userId}`);
-
-      if (res.ok) {
-        const data = await res.json();
-        // APIのレスポンス形式に合わせて柔軟に取得
-        // 1. data.users.user_name のパターン
-        // 2. data.user_name のパターン
-        const fetchedName = data.user.user_name
-        if (fetchedName) {
-          setUsername(fetchedName);
-        } else {
-          setErrorMessage("ユーザー情報が見つかりませんでした");
-        }
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setErrorMessage(body.message ?? "ユーザー情報の取得に失敗しました");
-      }
-    } catch (err) {
-      console.error(err);
-      setErrorMessage("通信エラーが発生しました");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
@@ -59,54 +22,45 @@ export default function EditUserPage() {
       setErrorMessage("ユーザー名は必須です");
       return;
     }
-
-    if (password && password !== confirmPassword) {
+    if (!password) {
+      setErrorMessage("パスワードは必須です");
+      return;
+    }
+    if (password !== confirmPassword) {
       setErrorMessage("パスワードと確認用パスワードが一致しません");
       return;
     }
 
     setLoading(true);
     try {
-      const body: { id: string; username: string; password?: string } = { id: userId, username };
-      if (password) {
-        body.password = password;
-      }
-
       const res = await fetch("/api/users", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ username, password }),
       });
 
-      if (res.ok) {
-        setSuccessMessage("ユーザー情報が更新されました");
-        setPassword("");
-        setConfirmPassword("");
-      } else {
-        const body = await res.json().catch(() => ({}));
-        setErrorMessage(body.message ?? "ユーザー情報の更新に失敗しました");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMessage(body.message ?? "パスワードの更新に失敗しました");
+        return;
       }
-    } catch (err) {
+
+      setSuccessMessage("パスワードが更新されました");
+      setUsername("");
+      setPassword("");
+      setConfirmPassword("");
+    } catch {
       setErrorMessage("通信エラーが発生しました");
     } finally {
       setLoading(false);
     }
   };
 
-  // 読み込み中の表示（エラーがない場合のみ）
-  if (loading && !username && !errorMessage) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-zinc-700 dark:text-zinc-300">読み込み中...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center">
       <main className="flex min-h-screen w-full max-w-md flex-col items-center justify-center px-8 bg-white dark:bg-black">
         <h1 className="mb-6 text-2xl font-semibold text-black dark:text-zinc-50">
-          ユーザー情報編集
+          パスワード変更
         </h1>
 
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
@@ -133,7 +87,7 @@ export default function EditUserPage() {
               htmlFor="password"
               className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
-              新しいパスワード (変更しない場合は空欄)
+              新しいパスワード
             </label>
             <input
               id="password"
@@ -152,7 +106,7 @@ export default function EditUserPage() {
               htmlFor="confirmPassword"
               className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
-              新しいパスワード (確認)
+              新しいパスワード（確認）
             </label>
             <input
               id="confirmPassword"
@@ -167,10 +121,14 @@ export default function EditUserPage() {
           </div>
 
           {errorMessage && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded">{errorMessage}</p>
+            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded">
+              {errorMessage}
+            </p>
           )}
           {successMessage && (
-            <p className="text-sm text-green-500 bg-green-50 dark:bg-green-950/30 p-2 rounded">{successMessage}</p>
+            <p className="text-sm text-green-500 bg-green-50 dark:bg-green-950/30 p-2 rounded">
+              {successMessage}
+            </p>
           )}
 
           <button

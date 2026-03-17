@@ -112,54 +112,41 @@ export async function POST(req: NextRequest) {
 }
 export async function PUT(req: NextRequest) {
   try {
-    const { id, username, password } = await req.json();
+    const { username, password } = await req.json();
 
-    if (!id) {
-      return NextResponse.json({ success: false, message: "ユーザーIDは必須です" }, { status: 400 });
+    if (!username || typeof username !== "string") {
+      return NextResponse.json({ success: false, message: "ユーザー名は必須です" }, { status: 400 });
+    }
+    if (!password || typeof password !== "string") {
+      return NextResponse.json({ success: false, message: "パスワードは必須です" }, { status: 400 });
     }
 
-    const updateData: { user_name?: string; password?: string } = {};
+    // ユーザー名でユーザーを検索
+    const { data: existingUser, error: fetchError } = await supabase
+      .from("mt_user_info")
+      .select("id")
+      .eq("user_name", username)
+      .single();
 
-    if (username) {
-      // ユーザー名の重複チェック (自分自身を除く)
-      const { data: existingUser, error: fetchError } = await supabase
-        .from("mt_user_info")
-        .select("id")
-        .eq("user_name", username)
-        .neq("id", id) // 編集中のユーザー自身を除く
-        .single();
-
-      if (existingUser) {
-        return NextResponse.json({ success: false, message: "このユーザー名は既に使用されています" }, { status: 409 });
-      }
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error("ユーザー名重複チェックエラー:", fetchError);
-        return NextResponse.json({ success: false, message: "ユーザー名重複チェックに失敗しました" }, { status: 500 });
-      }
-      updateData.user_name = username;
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error("ユーザー検索エラー:", fetchError);
+      return NextResponse.json({ success: false, message: "ユーザー検索に失敗しました" }, { status: 500 });
+    }
+    if (!existingUser) {
+      return NextResponse.json({ success: false, message: "ユーザーが見つかりません" }, { status: 404 });
     }
 
-    if (password) {
-      updateData.password = await hashPassword(password);
-    }
-
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ success: false, message: "更新する情報がありません" }, { status: 400 });
-    }
+    const hashedPassword = await hashPassword(password);
 
     const { data, error } = await supabase
       .from("mt_user_info")
-      .update(updateData)
-      .eq("id", id)
+      .update({ password: hashedPassword })
+      .eq("id", existingUser.id)
       .select();
 
     if (error) {
       console.error("Supabase update error:", error);
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
-    }
-
-    if (!data || data.length === 0) {
-      return NextResponse.json({ success: false, message: "ユーザーが見つからないか、更新に失敗しました" }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, user: data[0] }, { status: 200 });
