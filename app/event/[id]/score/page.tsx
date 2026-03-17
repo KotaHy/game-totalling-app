@@ -90,7 +90,7 @@ export default function EventScorePage() {
     };
   }, [eventId]);
 
-  const { teams, games, scoreMap, totals } = useMemo(() => {
+  const { teams, games, scoreMap, totals, teamNoMap } = useMemo(() => {
     const teamMap = new Map<string, { teamId: string; teamName: string }>();
     const gameSet = new Set<string>();
     const sMap = new Map<string, Map<string, string>>();
@@ -134,7 +134,10 @@ export default function EventScorePage() {
       (a, b) => b.total - a.total
     );
 
-    return { teams: teamsArr, games: gamesArr, scoreMap: sMap, totals: totalsArr };
+    const teamNoMap = new Map<string, number>();
+    teamsArr.forEach((t, i) => teamNoMap.set(t.teamId, i + 1));
+
+    return { teams: teamsArr, games: gamesArr, scoreMap: sMap, totals: totalsArr, teamNoMap };
   }, [rows, teamsFromMaster]);
 
   const handleScoreRegist = () => {
@@ -210,6 +213,7 @@ export default function EventScorePage() {
               <table className="w-full table-auto border-collapse text-sm">
                 <thead>
                   <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                    <th className={TH_CLASS}>No</th>
                     <th className={TH_CLASS}>チーム</th>
                     <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
                       スコア
@@ -217,8 +221,9 @@ export default function EventScorePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {teams.map((t) => (
+                  {teams.map((t, i) => (
                     <tr key={t.teamId} className={ROW_CLASS}>
+                      <td className={TD_CLASS}>{i + 1}</td>
                       <td className={TD_CLASS}>{t.teamName || "(不明)"}</td>
                       <td className="py-2 text-zinc-900 dark:text-zinc-50">未登録</td>
                     </tr>
@@ -256,6 +261,7 @@ export default function EventScorePage() {
                 <table className="w-full table-auto border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                      <th className={TH_CLASS}>No</th>
                       <th className={TH_CLASS}>チーム</th>
                       {games.map((g) => (
                         <th
@@ -268,8 +274,9 @@ export default function EventScorePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {teams.map((t) => (
+                    {teams.map((t, i) => (
                       <tr key={t.teamId} className={ROW_CLASS}>
+                        <td className={TD_CLASS}>{i + 1}</td>
                         <td className={TD_CLASS}>{t.teamName || "(不明)"}</td>
                         {games.map((g) => (
                           <td
@@ -306,7 +313,12 @@ export default function EventScorePage() {
                     {totals.map((t, index) => (
                       <tr key={t.teamId} className={ROW_CLASS}>
                         <td className={TD_CLASS}>{index + 1}</td>
-                        <td className={TD_CLASS}>{t.teamName || "(不明)"}</td>
+                        <td className={TD_CLASS}>
+                          {t.teamName || "(不明)"}
+                          <span className="ml-1 text-sm">
+                            [{teamNoMap.get(t.teamId) ?? "-"}]
+                          </span>
+                        </td>
                         <td className="py-2 text-zinc-900 dark:text-zinc-50">
                           {t.total}
                         </td>
@@ -353,7 +365,7 @@ export default function EventScorePage() {
                     {(t.members ?? []).length > 0 && (
                       <ul className="mt-1 ml-4 space-y-0.5">
                         {(t.members ?? []).map((m, j) => (
-                          <li key={j} className="text-xs text-zinc-500 dark:text-zinc-400">
+                          <li key={j} className="text-sm text-zinc-500 dark:text-zinc-400">
                             ・{m}
                           </li>
                         ))}

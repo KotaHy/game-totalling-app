@@ -140,12 +140,12 @@ export default function ScoreRegistPage() {
           <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
             スコア登録（試合: {gameId}）
           </h1>
-          <div className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-200">
+          <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-200">
             <span>キルP上限</span>
             <select
               value={killLimit}
               onChange={(e) => setKillLimit(Number(e.target.value) || 0)}
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
             >
               {Array.from({ length: 21 }, (_, i) => i).map((v) => (
                 <option key={v} value={v}>
@@ -173,7 +173,7 @@ export default function ScoreRegistPage() {
                         `/event/${encodeURIComponent(String(eventId))}/team/regist`
                       )
                     }
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+                    className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
                   >
                     チーム登録
                   </button>
@@ -183,7 +183,7 @@ export default function ScoreRegistPage() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
                   <div className="w-1/3">チーム</div>
-                  <div className="w-1/4 text-right">順位P</div>
+                  <div className="w-1/4 text-right">順位</div>
                   <div className="w-1/4 text-right">キル数</div>
                   <div className="w-1/6 text-right">合計スコア</div>
                 </div>
@@ -204,7 +204,7 @@ export default function ScoreRegistPage() {
                           handleChangeScore(key, "rank", e.target.value)
                         }
                         min={0}
-                        placeholder="順位P"
+                        placeholder="順位"
                       />
                       <input
                         type="number"

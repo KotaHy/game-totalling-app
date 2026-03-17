@@ -108,6 +108,27 @@ export default function TeamRegistPage() {
     ]);
   };
 
+  const handleDeleteRow = async (index: number) => {
+    const row = rows[index];
+    if (row.id && eventId) {
+      try {
+        const res = await fetch(
+          `/api/events/${encodeURIComponent(String(eventId))}/teams?teamId=${encodeURIComponent(row.id)}`,
+          { method: "DELETE" }
+        );
+        const body = await res.json().catch(() => ({} as any));
+        if (!res.ok) {
+          setErrorMessage(body?.message ?? "削除に失敗しました");
+          return;
+        }
+      } catch {
+        setErrorMessage("削除に失敗しました");
+        return;
+      }
+    }
+    setRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!eventId) return;
@@ -183,6 +204,7 @@ export default function TeamRegistPage() {
                   <div className="w-1/4">チームリーダー</div>
                   <div className="w-1/4">メンバー1</div>
                   <div className="w-1/4">メンバー2</div>
+                  <div className="w-8"></div>
                 </div>
 
                 {rows.map((row, idx) => (
@@ -201,6 +223,13 @@ export default function TeamRegistPage() {
                         placeholder={PLACEHOLDERS[field]}
                       />
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRow(idx)}
+                      className="shrink-0 whitespace-nowrap rounded-md border border-red-300 px-2 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                    >
+                      削除
+                    </button>
                   </div>
                 ))}
 
