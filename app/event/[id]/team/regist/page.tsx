@@ -200,6 +200,7 @@ export default function TeamRegistPage() {
             <PageCard className="mt-3">
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                  <div className="w-6 text-center">No</div>
                   <div className="w-1/4">チーム名</div>
                   <div className="w-1/4">チームリーダー</div>
                   <div className="w-1/4">メンバー1</div>
@@ -209,6 +210,9 @@ export default function TeamRegistPage() {
 
                 {rows.map((row, idx) => (
                   <div key={row.id ?? idx} className="flex items-center gap-3">
+                    <div className="w-6 shrink-0 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                      {idx + 1}
+                    </div>
                     {(
                       ["name", "leader", "member1", "member2"] as const
                     ).map((field) => (
