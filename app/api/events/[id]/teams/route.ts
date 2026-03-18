@@ -77,7 +77,7 @@ export async function GET(
 
     const { data, error } = await supabase
       .from("team_info")
-      .select("id,name,member_info(name)")
+      .select("id,name,image_path,member_info(name)")
       .eq("event_id", id)
       .order("id", { ascending: true });
 
@@ -155,7 +155,7 @@ export async function POST(
       }
     }
 
-    return json(200, { success: true });
+    return json(200, { success: true, teams: insertedTeams ?? [] });
   } catch (e) {
     console.error(e);
     return json(500, { success: false, message: "サーバーエラー" });
@@ -230,8 +230,9 @@ export async function PUT(
     }
 
     // 新規チームの追加
+    let insertedNewTeams: { id: any; name: string }[] = [];
     if (newTeams.length > 0) {
-      const { data: insertedTeams, error: teamError } = await supabase
+      const { data: inserted, error: teamError } = await supabase
         .from("team_info")
         .insert(newTeams.map((t: any) => ({ name: t.name, event_id: id })))
         .select("id,name");
@@ -241,8 +242,10 @@ export async function PUT(
         return json(500, { success: false, message: "チーム登録に失敗しました" });
       }
 
+      insertedNewTeams = inserted ?? [];
+
       const memberRows: { name: string; team_id: any }[] = [];
-      (insertedTeams ?? []).forEach((t: any, index: number) => {
+      insertedNewTeams.forEach((t: any, index: number) => {
         const src = newTeams[index];
         if (!src) return;
         const members: string[] = [src.leader, src.member1, src.member2].filter(
@@ -264,7 +267,14 @@ export async function PUT(
       }
     }
 
-    return json(200, { success: true });
+    // 全チームをまとめて返す（既存 + 新規、入力順）
+    const allTeams = teams.map((t) => {
+      if (t.id) return { id: t.id, name: t.name };
+      const inserted = insertedNewTeams.shift();
+      return { id: inserted?.id, name: t.name };
+    });
+
+    return json(200, { success: true, teams: allTeams });
   } catch (e) {
     console.error(e);
     return json(500, { success: false, message: "サーバーエラー" });

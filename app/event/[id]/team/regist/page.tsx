@@ -8,14 +8,13 @@ import ErrorMessage from "@/components/ui/ErrorMessage";
 import SubmitButton from "@/components/ui/SubmitButton";
 import TeamFormRow, { TeamFormData } from "@/components/event/TeamFormRow";
 
-type TeamFormRow = TeamFormData;
-
 export default function TeamRegistPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const eventId = params?.id;
 
-  const [rows, setRows] = useState<TeamFormRow[]>([]);
+  const [rows, setRows] = useState<TeamFormData[]>([]);
+  const [imageFiles, setImageFiles] = useState<Record<number, File | null>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -53,6 +52,7 @@ export default function TeamRegistPage() {
                   leader: members[0] ?? "",
                   member1: members[1] ?? "",
                   member2: members[2] ?? "",
+                  imagePath: t.image_path ?? null,
                 };
               })
             );
@@ -79,12 +79,16 @@ export default function TeamRegistPage() {
   }, [eventId]);
 
   const handleChange =
-    (index: number, field: keyof Omit<TeamFormRow, "id">) =>
+    (index: number, field: keyof Omit<TeamFormData, "id" | "imagePath">) =>
       (value: string) => {
         setRows((prev) =>
           prev.map((r, i) => (i === index ? { ...r, [field]: value } : r))
         );
       };
+
+  const handleImageChange = (index: number, file: File | null) => {
+    setImageFiles((prev) => ({ ...prev, [index]: file }));
+  };
 
   const handleAddRow = () => {
     setRows((prev) => [
@@ -112,6 +116,25 @@ export default function TeamRegistPage() {
       }
     }
     setRows((prev) => prev.filter((_, i) => i !== index));
+    // imageFiles のインデックスをずらす
+    setImageFiles((prev) => {
+      const next: Record<number, File | null> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        const n = Number(k);
+        if (n < index) next[n] = v;
+        else if (n > index) next[n - 1] = v;
+      }
+      return next;
+    });
+  };
+
+  const uploadImage = async (teamId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    await fetch(
+      `/api/events/${encodeURIComponent(String(eventId))}/teams/${encodeURIComponent(teamId)}/image`,
+      { method: "POST", body: formData }
+    );
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -124,6 +147,11 @@ export default function TeamRegistPage() {
       setErrorMessage("少なくとも1つのチーム名を入力してください");
       return;
     }
+
+    // validRows に対応する imageFiles のインデックスマップを作成
+    const validIndices = rows
+      .map((r, i) => (r.name.trim() !== "" ? i : -1))
+      .filter((i) => i !== -1);
 
     setSubmitting(true);
     try {
@@ -142,6 +170,18 @@ export default function TeamRegistPage() {
       if (!res.ok) {
         throw new Error(body?.message ?? "チーム登録に失敗しました");
       }
+
+      // 画像のアップロード
+      const returnedTeams: { id: string; name: string }[] = body.teams ?? [];
+      await Promise.all(
+        validIndices.map(async (originalIdx, validIdx) => {
+          const file = imageFiles[originalIdx];
+          if (!file) return;
+          const teamId = returnedTeams[validIdx]?.id;
+          if (!teamId) return;
+          await uploadImage(String(teamId), file);
+        })
+      );
 
       router.push(`/event/${encodeURIComponent(String(eventId))}/score`);
       router.refresh();
@@ -199,8 +239,10 @@ export default function TeamRegistPage() {
                     key={row.id ?? idx}
                     row={row}
                     index={idx}
+                    imageFile={imageFiles[idx] ?? null}
                     onChange={(field, value) => handleChange(idx, field)(value)}
                     onDelete={() => handleDeleteRow(idx)}
+                    onImageChange={(file) => handleImageChange(idx, file)}
                   />
                 ))}
 
