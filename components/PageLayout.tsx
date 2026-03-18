@@ -15,7 +15,7 @@ interface PageLayoutProps {
 
 export default function PageLayout({
   children,
-  mainClassName = "flex-1 px-100 py-20",
+  mainClassName = "flex-1 px-4 pb-4 pt-16 sm:px-6 sm:pt-20",
   onMyPage,
   onLogout,
   onEventRegist,
