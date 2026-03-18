@@ -171,7 +171,7 @@ export default function ScoreRegistPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-[minmax(8rem,1fr)_5rem_5rem_4rem_4rem_4rem] items-center gap-x-4 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                <div className="hidden sm:grid grid-cols-[minmax(8rem,1fr)_5rem_5rem_4rem_4rem_4rem] items-center gap-x-4 text-sm font-medium text-zinc-600 dark:text-zinc-300">
                   <div className="text-center">チーム</div>
                   <div className="text-center">順位</div>
                   <div className="text-center">キル数</div>

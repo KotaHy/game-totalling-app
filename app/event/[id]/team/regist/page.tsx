@@ -18,6 +18,9 @@ type TeamFormRow = {
 const INPUT_CLASS =
   "w-1/4 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
 
+const MOBILE_INPUT_CLASS =
+  "w-full rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+
 const PLACEHOLDERS: Record<keyof Omit<TeamFormRow, "id">, string> = {
   name: "チーム名",
   leader: "チームリーダー",
@@ -199,7 +202,8 @@ export default function TeamRegistPage() {
           <form onSubmit={handleSubmit}>
             <PageCard className="mt-3">
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                {/* タブレット・PC: ヘッダー行 */}
+                <div className="hidden sm:flex items-center gap-3 text-sm font-medium text-zinc-600 dark:text-zinc-300">
                   <div className="w-6 text-center">No</div>
                   <div className="w-1/4">チーム名</div>
                   <div className="w-1/4">チームリーダー</div>
@@ -209,31 +213,64 @@ export default function TeamRegistPage() {
                 </div>
 
                 {rows.map((row, idx) => (
-                  <div key={row.id ?? idx} className="flex items-center gap-3">
-                    <div className="w-6 shrink-0 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                      {idx + 1}
+                  <div key={row.id ?? idx}>
+                    {/* モバイル: カードレイアウト */}
+                    <div className="sm:hidden rounded-lg border border-zinc-100 p-3 space-y-2 dark:border-zinc-800">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                          No.{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRow(idx)}
+                          className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                        >
+                          削除
+                        </button>
+                      </div>
+                      {(["name", "leader", "member1", "member2"] as const).map(
+                        (field) => (
+                          <input
+                            key={field}
+                            type="text"
+                            className={MOBILE_INPUT_CLASS}
+                            value={row[field]}
+                            onChange={(e) =>
+                              handleChange(idx, field)(e.target.value)
+                            }
+                            placeholder={PLACEHOLDERS[field]}
+                          />
+                        )
+                      )}
                     </div>
-                    {(
-                      ["name", "leader", "member1", "member2"] as const
-                    ).map((field) => (
-                      <input
-                        key={field}
-                        type="text"
-                        className={INPUT_CLASS}
-                        value={row[field]}
-                        onChange={(e) =>
-                          handleChange(idx, field)(e.target.value)
-                        }
-                        placeholder={PLACEHOLDERS[field]}
-                      />
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteRow(idx)}
-                      className="shrink-0 whitespace-nowrap rounded-md border border-red-300 px-2 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
-                    >
-                      削除
-                    </button>
+
+                    {/* タブレット・PC: 横並びレイアウト */}
+                    <div className="hidden sm:flex items-center gap-3">
+                      <div className="w-6 shrink-0 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        {idx + 1}
+                      </div>
+                      {(
+                        ["name", "leader", "member1", "member2"] as const
+                      ).map((field) => (
+                        <input
+                          key={field}
+                          type="text"
+                          className={INPUT_CLASS}
+                          value={row[field]}
+                          onChange={(e) =>
+                            handleChange(idx, field)(e.target.value)
+                          }
+                          placeholder={PLACEHOLDERS[field]}
+                        />
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRow(idx)}
+                        className="shrink-0 whitespace-nowrap rounded-md border border-red-300 px-2 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
+                      >
+                        削除
+                      </button>
+                    </div>
                   </div>
                 ))}
 

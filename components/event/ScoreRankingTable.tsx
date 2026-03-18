@@ -18,7 +18,34 @@ export default function ScoreRankingTable({
       <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
         合計スコアランキング
       </h2>
-      <div className="mt-2 overflow-x-auto">
+
+      {/* モバイル: カードレイアウト */}
+      <div className="sm:hidden mt-2 space-y-2">
+        {totals.map((t, index) => (
+          <div
+            key={t.teamId}
+            className="flex items-center justify-between rounded-lg border border-zinc-100 p-3 dark:border-zinc-800"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-6 text-center text-base font-bold text-zinc-900 dark:text-zinc-50">
+                {index + 1}
+              </span>
+              <span className="text-sm text-zinc-900 dark:text-zinc-50">
+                {t.teamName || "(不明)"}
+                <span className="ml-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  [{teamNoMap.get(t.teamId) ?? "-"}]
+                </span>
+              </span>
+            </div>
+            <span className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              {t.total}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* タブレット・PC: テーブルレイアウト */}
+      <div className="hidden sm:block mt-2 overflow-x-auto">
         <table className="w-full table-auto border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-200 dark:border-zinc-800">

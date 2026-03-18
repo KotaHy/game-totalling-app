@@ -35,20 +35,50 @@ export default function ScoreGameTable({
           <button
             type="button"
             onClick={onTeamListClick}
-            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-medium text-zinc-800 shadow-sm transition hover:bg-zinc-100 sm:px-3 sm:py-1.5 sm:text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
           >
             チーム一覧
           </button>
           <button
             type="button"
             onClick={onScoreRegist}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-950"
+            className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white sm:px-3 sm:py-1.5 sm:text-sm dark:focus:ring-offset-zinc-950"
           >
             スコア登録
           </button>
         </div>
       </div>
-      <div className="mt-2 overflow-x-auto">
+
+      {/* モバイル: カードレイアウト */}
+      <div className="sm:hidden mt-2 space-y-2">
+        {teams.map((t, i) => (
+          <div
+            key={t.teamId}
+            className="rounded-lg border border-zinc-100 p-3 dark:border-zinc-800"
+          >
+            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+              {i + 1}. {t.teamName || "(不明)"}
+            </div>
+            {games.length > 0 && (
+              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                {games.map((g) => (
+                  <div key={g} className="flex justify-between">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      {formatGameLabel(g)}
+                    </span>
+                    <span className="text-zinc-900 dark:text-zinc-50">
+                      {scoreMap.get(g)?.get(t.teamId) || "-"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* タブレット・PC: テーブルレイアウト */}
+      <div className="hidden sm:block mt-2 overflow-x-auto">
         <table className="w-full table-auto border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-200 dark:border-zinc-800">
