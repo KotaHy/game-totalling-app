@@ -11,6 +11,40 @@ function json(status: number, body: unknown) {
   });
 }
 
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      return json(500, { success: false, message: "Supabase設定が未完了です" });
+    }
+
+    const { id } = await params;
+    if (!id) {
+      return json(400, { success: false, message: "event id が不正です" });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    const { data, error } = await supabase
+      .from("mt_event_info")
+      .select("id,name,execute_date")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error("mt_event_info select error:", error);
+      return json(500, { success: false, message: "イベント取得に失敗しました" });
+    }
+
+    return json(200, { success: true, event: data });
+  } catch (e) {
+    console.error(e);
+    return json(500, { success: false, message: "サーバーエラー" });
+  }
+}
+
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -9,6 +9,7 @@ import TeamListModal, { TeamWithMembers } from "@/components/event/TeamListModal
 import ScoreGameTable from "@/components/event/ScoreGameTable";
 import ScoreRankingTable from "@/components/event/ScoreRankingTable";
 import TeamNoScoreList from "@/components/event/TeamNoScoreList";
+import ResultImageModal from "@/components/event/ResultImageModal";
 
 type ScoreRow = {
   score: number | string | null;
@@ -24,9 +25,11 @@ export default function EventScorePage() {
 
   const [rows, setRows] = useState<ScoreRow[]>([]);
   const [teamsFromMaster, setTeamsFromMaster] = useState<TeamWithMembers[]>([]);
+  const [eventName, setEventName] = useState("");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [showTeamList, setShowTeamList] = useState(false);
+  const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -35,13 +38,15 @@ export default function EventScorePage() {
       setLoading(true);
       setErrorMessage("");
       try {
-        const [scoresRes, teamsRes] = await Promise.all([
+        const [scoresRes, teamsRes, eventRes] = await Promise.all([
           fetch(`/api/events/${encodeURIComponent(eventId)}/scores`),
           fetch(`/api/events/${encodeURIComponent(eventId)}/teams`),
+          fetch(`/api/events/${encodeURIComponent(eventId)}`),
         ]);
 
         const scoresBody = await scoresRes.json().catch(() => ({} as any));
         const teamsBody = await teamsRes.json().catch(() => ({} as any));
+        const eventBody = await eventRes.json().catch(() => ({} as any));
 
         if (!scoresRes.ok) {
           throw new Error(scoresBody?.message ?? "スコア取得に失敗しました");
@@ -59,9 +64,11 @@ export default function EventScorePage() {
                 members: Array.isArray(t.member_info)
                   ? t.member_info.map((m: any) => String(m.name ?? ""))
                   : [],
+                imagePath: t.image_path ?? undefined,
               }))
             : [];
           setTeamsFromMaster(masters);
+          setEventName(eventBody?.event?.name ?? "");
         }
       } catch (e) {
         if (!cancelled) {
@@ -151,7 +158,7 @@ export default function EventScorePage() {
       onBackToTop={() => router.push("/top")}
     >
       <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-        スコア一覧（イベントID: {eventId}）
+        スコア一覧（{eventName}）
       </h1>
 
       <PageCard className="mt-4">
@@ -190,6 +197,15 @@ export default function EventScorePage() {
               onScoreRegist={handleScoreRegist}
             />
             <ScoreRankingTable totals={totals} teamNoMap={teamNoMap} />
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowResult(true)}
+                className="rounded-md bg-yellow-500 px-4 py-2 text-sm text-black shadow-sm transition hover:bg-yellow-400"
+              >
+                結果表示
+              </button>
+            </div>
           </div>
         )}
       </PageCard>
@@ -197,8 +213,18 @@ export default function EventScorePage() {
       {showTeamList && eventId && (
         <TeamListModal
           eventId={eventId}
+          eventName={eventName}
           teams={teamsFromMaster}
           onClose={() => setShowTeamList(false)}
+        />
+      )}
+
+      {showResult && (
+        <ResultImageModal
+          eventName={eventName}
+          totals={totals}
+          teams={teamsFromMaster}
+          onClose={() => setShowResult(false)}
         />
       )}
     </PageLayout>

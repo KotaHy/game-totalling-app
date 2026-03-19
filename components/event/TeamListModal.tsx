@@ -2,16 +2,19 @@ export type TeamWithMembers = {
   teamId: string;
   teamName: string;
   members: string[];
+  imagePath?: string;
 };
 
 interface TeamListModalProps {
   eventId: string;
+  eventName?: string;
   teams: TeamWithMembers[];
   onClose: () => void;
 }
 
 export default function TeamListModal({
   eventId,
+  eventName,
   teams,
   onClose,
 }: TeamListModalProps) {
@@ -26,7 +29,7 @@ export default function TeamListModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-            チーム一覧（イベントID: {eventId}）
+            チーム一覧（{eventName}）
           </h2>
           <button
             type="button"
