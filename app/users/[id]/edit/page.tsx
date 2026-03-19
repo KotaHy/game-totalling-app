@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import FormField from "@/components/ui/FormField";
+import ErrorMessage from "@/components/ui/ErrorMessage";
+import SubmitButton from "@/components/ui/SubmitButton";
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -64,80 +67,46 @@ export default function EditUserPage() {
         </h1>
 
         <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="username"
-              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              ユーザー名
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              placeholder="ユーザー名を入力"
-              disabled={loading}
-            />
-          </div>
+          <FormField
+            id="username"
+            label="ユーザー名"
+            value={username}
+            onChange={setUsername}
+            placeholder="ユーザー名を入力"
+            disabled={loading}
+          />
+          <FormField
+            id="password"
+            label="新しいパスワード"
+            type="password"
+            value={password}
+            onChange={setPassword}
+            placeholder="新しいパスワードを入力"
+            disabled={loading}
+            autoComplete="new-password"
+          />
+          <FormField
+            id="confirmPassword"
+            label="新しいパスワード（確認）"
+            type="password"
+            value={confirmPassword}
+            onChange={setConfirmPassword}
+            placeholder="新しいパスワードを再入力"
+            disabled={loading}
+            autoComplete="new-password"
+          />
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="password"
-              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              新しいパスワード
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              placeholder="新しいパスワードを入力"
-              disabled={loading}
-              autoComplete="new-password"
-            />
-          </div>
+          <ErrorMessage message={errorMessage} />
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="confirmPassword"
-              className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              新しいパスワード（確認）
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-              placeholder="新しいパスワードを再入力"
-              disabled={loading}
-              autoComplete="new-password"
-            />
-          </div>
-
-          {errorMessage && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded">
-              {errorMessage}
-            </p>
-          )}
           {successMessage && (
-            <p className="text-sm text-green-500 bg-green-50 dark:bg-green-950/30 p-2 rounded">
+            <p className="text-sm text-green-600 dark:text-green-400">
               {successMessage}
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 h-11 rounded-md bg-blue-600 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-black"
-          >
-            {loading ? "更新中..." : "更新"}
-          </button>
+          <SubmitButton loading={loading} loadingLabel="更新中..." fullWidth className="mt-2 h-11">
+            更新
+          </SubmitButton>
 
           <div className="mt-4 text-center">
             <button

@@ -5,6 +5,8 @@ interface FormFieldProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  disabled?: boolean;
+  autoComplete?: string;
   className?: string;
 }
 
@@ -15,6 +17,8 @@ export default function FormField({
   value,
   onChange,
   placeholder,
+  disabled,
+  autoComplete,
   className,
 }: FormFieldProps) {
   return (
@@ -31,7 +35,9 @@ export default function FormField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+        disabled={disabled}
+        autoComplete={autoComplete}
+        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
       />
     </div>
   );
