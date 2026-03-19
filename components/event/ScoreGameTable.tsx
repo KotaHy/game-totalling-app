@@ -1,5 +1,5 @@
-const TH_CLASS = "py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200";
-const TD_CLASS = "py-2 pr-4 text-zinc-900 dark:text-zinc-50";
+const TH_CLASS = "py-2 px-3 text-left font-medium text-zinc-700 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-200";
+const TD_CLASS = "py-2 px-3 text-zinc-900 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-50";
 const ROW_CLASS = "border-b border-zinc-100 last:border-b-0 dark:border-zinc-900";
 
 function formatGameLabel(gameId: string) {
@@ -87,7 +87,7 @@ export default function ScoreGameTable({
               {games.map((g) => (
                 <th
                   key={g}
-                  className="py-2 px-3 text-left font-medium text-zinc-700 dark:text-zinc-200"
+                  className="py-2 px-3 text-left font-medium text-zinc-700 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-200"
                 >
                   {formatGameLabel(g)}
                 </th>
@@ -102,7 +102,7 @@ export default function ScoreGameTable({
                 {games.map((g) => (
                   <td
                     key={`${t.teamId}-${g}`}
-                    className="py-2 px-3 text-zinc-900 dark:text-zinc-50"
+                    className="py-2 px-3 text-zinc-900 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-50"
                   >
                     {scoreMap.get(g)?.get(t.teamId) || "-"}
                   </td>

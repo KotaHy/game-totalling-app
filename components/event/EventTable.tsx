@@ -6,8 +6,8 @@ export type EventRow = {
   execute_date: string | null;
 };
 
-const TH_CLASS = "py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200";
-const TD_CLASS = "py-2 pr-4 text-zinc-900 dark:text-zinc-50";
+const TH_CLASS = "py-2 px-3 text-left font-medium text-zinc-700 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-200";
+const TD_CLASS = "py-2 px-3 text-zinc-900 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-50";
 
 interface EventTableProps {
   events: EventRow[];
@@ -60,7 +60,7 @@ export default function EventTable({ events, onDeleteClick }: EventTableProps) {
               <th className={TH_CLASS}>イベントID</th>
               <th className={TH_CLASS}>イベント名</th>
               <th className={TH_CLASS}>開催日</th>
-              <th className="py-2 text-right font-medium text-zinc-700 dark:text-zinc-200"></th>
+              <th className="py-2 px-3 text-right font-medium text-zinc-700 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-200"></th>
             </tr>
           </thead>
           <tbody>
@@ -79,7 +79,7 @@ export default function EventTable({ events, onDeleteClick }: EventTableProps) {
                 </td>
                 <td className={TD_CLASS}>{ev.name ?? ""}</td>
                 <td className={TD_CLASS}>{ev.execute_date ?? ""}</td>
-                <td className="py-2 text-right">
+                <td className="py-2 px-3 text-right border-r border-zinc-200 dark:border-zinc-700">
                   <button
                     type="button"
                     onClick={() => onDeleteClick(ev)}

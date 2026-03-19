@@ -324,7 +324,7 @@ export default function ResultImageModal({
 
       {/* 4th+ table: 3行ごとに列を分割 */}
       {rest.length > 0 && (() => {
-        const ROWS_PER_COL = 3;
+        const ROWS_PER_COL = 5;
         const chunks: typeof rest[] = [];
         for (let i = 0; i < rest.length; i += ROWS_PER_COL) {
           chunks.push(rest.slice(i, i + ROWS_PER_COL));
@@ -333,14 +333,15 @@ export default function ResultImageModal({
           <div
             style={{
               position: "absolute",
-              bottom: 60,
-              right: 80,
+              bottom: 30,
+              left: "50%",
+              transform: "translateX(-50%)",
               background: "#000",
               border: "1px solid rgba(255,255,255,0.15)",
               borderRadius: 16,
-              padding: "24px 36px",
+              padding: "24px 24px",
               display: "flex",
-              gap: 40,
+              gap: 15,
             }}
           >
             {chunks.map((chunk, ci) => (
@@ -353,8 +354,8 @@ export default function ResultImageModal({
                         <td
                           style={{
                             padding: "8px 16px 8px 0",
-                            fontSize: 28,
-                            fontWeight: 700,
+                            fontSize: 18,
+                            fontWeight: 550,
                             color: "#fff",
                             whiteSpace: "nowrap",
                           }}
@@ -364,20 +365,26 @@ export default function ResultImageModal({
                         <td
                           style={{
                             padding: "8px 0",
-                            fontSize: 28,
+                            fontSize: 17,
                             color: "#fff",
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {t.teamName || "(不明)"}
+                          {(() => {
+                            const name = t.teamName || "(不明)";
+                            return name.length >= 22 ? name.slice(0, 22) + "..." : name;
+                          })()}
                         </td>
                         <td
                           style={{
-                            padding: "8px 0 8px 20px",
-                            fontSize: 24,
+                            padding: "8px 8px 8px 8px",
+                            fontSize: 15,
                             color: "#fff",
                             textAlign: "right",
                             whiteSpace: "nowrap",
+                            ...(ci < chunks.length - 1 && {
+                              borderRight: "1px solid rgba(255,255,255)",
+                            }),
                           }}
                         >
                           {t.total} pt

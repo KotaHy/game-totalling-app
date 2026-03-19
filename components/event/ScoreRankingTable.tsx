@@ -1,5 +1,5 @@
-const TH_CLASS = "py-2 pr-4 text-left font-medium text-zinc-700 dark:text-zinc-200";
-const TD_CLASS = "py-2 pr-4 text-zinc-900 dark:text-zinc-50";
+const TH_CLASS = "py-2 px-3 text-left font-medium text-zinc-700 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-200";
+const TD_CLASS = "py-2 px-3 text-zinc-900 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-50";
 const ROW_CLASS = "border-b border-zinc-100 last:border-b-0 dark:border-zinc-900";
 
 export type TotalEntry = { teamId: string; teamName: string; total: number };
@@ -51,7 +51,7 @@ export default function ScoreRankingTable({
             <tr className="border-b border-zinc-200 dark:border-zinc-800">
               <th className={TH_CLASS}>順位</th>
               <th className={TH_CLASS}>チーム</th>
-              <th className="py-2 text-left font-medium text-zinc-700 dark:text-zinc-200">
+              <th className="py-2 px-3 text-left font-medium text-zinc-700 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-200">
                 合計スコア
               </th>
             </tr>
@@ -66,7 +66,7 @@ export default function ScoreRankingTable({
                     [{teamNoMap.get(t.teamId) ?? "-"}]
                   </span>
                 </td>
-                <td className="py-2 text-zinc-900 dark:text-zinc-50">
+                <td className="py-2 px-3 text-zinc-900 border-r border-zinc-200 dark:border-zinc-700 dark:text-zinc-50">
                   {t.total}
                 </td>
               </tr>
