@@ -32,7 +32,6 @@ async function fetchSignedDataUrl(imagePath: string): Promise<string | null> {
     const body = await res.json();
     if (!body.signedUrl) return null;
 
-    // 署名付き URL から画像を取得して base64 に変換
     const imgRes = await fetch(body.signedUrl);
     if (!imgRes.ok) return null;
     const blob = await imgRes.blob();
@@ -47,99 +46,6 @@ async function fetchSignedDataUrl(imagePath: string): Promise<string | null> {
   }
 }
 
-interface PodiumTeamProps {
-  entry: TotalEntry;
-  rank: number;
-  dataUrl: string | null;
-  imgWidth: number;
-  imgHeight: number;
-  nameFontSize: number;
-  scoreFontSize: number;
-}
-
-function PodiumTeam({
-  entry,
-  rank,
-  dataUrl,
-  imgWidth,
-  imgHeight,
-  nameFontSize,
-  scoreFontSize,
-}: PodiumTeamProps) {
-  const color = RANK_COLOR[rank] ?? "#fff";
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 12,
-      }}
-    >
-      <div
-        style={{
-          fontSize: rank === 1 ? 36 : 28,
-          fontWeight: 900,
-          color,
-          textShadow: `0 0 20px ${color}`,
-          letterSpacing: 2,
-        }}
-      >
-        {RANK_LABEL[rank]}
-      </div>
-
-      <div
-        style={{
-          width: imgWidth,
-          height: imgHeight,
-          borderRadius: 12,
-          border: `4px solid ${color}`,
-          boxShadow: `0 0 30px ${color}80`,
-          overflow: "hidden",
-          background: "#1a1a2e",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {dataUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={dataUrl}
-            alt={entry.teamName}
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
-          />
-        ) : (
-          <span style={{ fontSize: 48, color: "#555" }}>?</span>
-        )}
-      </div>
-
-      <div
-        style={{
-          fontSize: nameFontSize,
-          fontWeight: 700,
-          color: "#fff",
-          textShadow: "0 2px 8px rgba(0,0,0,0.8)",
-          textAlign: "center",
-          maxWidth: imgWidth + 40,
-        }}
-      >
-        {entry.teamName || "(不明)"}
-      </div>
-
-      <div
-        style={{
-          fontSize: scoreFontSize,
-          fontWeight: 600,
-          color,
-        }}
-      >
-        {entry.total} pt
-      </div>
-    </div>
-  );
-}
-
 export default function ResultImageModal({
   eventName,
   totals,
@@ -150,10 +56,7 @@ export default function ResultImageModal({
   const bgInputRef = useRef<HTMLInputElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [bgImageUrl, setBgImageUrl] = useState<string | null>(null);
-  // teamId → base64 data URL
-  const [dataUrlMap, setDataUrlMap] = useState<Map<string, string | null>>(
-    new Map()
-  );
+  const [dataUrlMap, setDataUrlMap] = useState<Map<string, string | null>>(new Map());
   const [loadingImages, setLoadingImages] = useState(true);
 
   const handleBgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +68,17 @@ export default function ResultImageModal({
   };
 
   const imagePathMap = new Map(teams.map((t) => [t.teamId, t.imagePath]));
-  const top3Ids = totals.slice(0, 3).map((t) => t.teamId);
+
+  const tiedRanks = totals.map((t) =>
+    totals.filter((o) => o.total > t.total).length + 1
+  );
+  const rank1Teams = totals.filter((_, i) => tiedRanks[i] === 1);
+  const rank2Teams = totals.filter((_, i) => tiedRanks[i] === 2);
+  const rank3Teams = totals.filter((_, i) => tiedRanks[i] === 3);
+  const restWithRanks = totals
+    .map((t, i) => ({ ...t, rank: tiedRanks[i] }))
+    .filter((t) => t.rank > 3);
+  const top3Ids = [...rank1Teams, ...rank2Teams, ...rank3Teams].map((t) => t.teamId);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,10 +103,12 @@ export default function ResultImageModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const first = totals[0];
-  const second = totals[1];
-  const third = totals[2];
-  const rest = totals.slice(3);
+  // 2nd → 1st → 3rd の順で表示、チームが存在する順位のみ
+  const podiumGroups = [
+    { rank: 2, entries: rank2Teams },
+    { rank: 1, entries: rank1Teams },
+    { rank: 3, entries: rank3Teams },
+  ].filter((g) => g.entries.length > 0);
 
   const handleDownload = async () => {
     if (!canvasRef.current) return;
@@ -251,8 +166,7 @@ export default function ResultImageModal({
           fontSize: 56,
           fontWeight: 900,
           color: "#FFD700",
-          textShadow:
-            "0 0 40px rgba(255,215,0,0.6), 0 4px 16px rgba(0,0,0,0.8)",
+          textShadow: "0 0 40px rgba(255,215,0,0.6), 0 4px 16px rgba(0,0,0,0.8)",
           letterSpacing: 8,
           zIndex: 1,
         }}
@@ -272,7 +186,7 @@ export default function ResultImageModal({
         FINAL RANKING
       </div>
 
-      {/* Podium */}
+      {/* Podium: 同順位は横一列 */}
       <div
         style={{
           display: "flex",
@@ -280,54 +194,106 @@ export default function ResultImageModal({
           justifyContent: "center",
           gap: 80,
           marginTop: 30,
-          paddingBottom: 320,
+          paddingBottom: restWithRanks.length > 0 ? 320 : 40,
           zIndex: 1,
           flex: 1,
         }}
       >
-        {second && (
-          <PodiumTeam
-            entry={second}
-            rank={2}
-            dataUrl={dataUrlMap.get(second.teamId) ?? null}
-            imgWidth={426}
-            imgHeight={240}
-            nameFontSize={28}
-            scoreFontSize={22}
-          />
-        )}
+        {podiumGroups.map(({ rank, entries }) => {
+          const count = entries.length;
+          const GAP = 16;
+          const BASE_W = rank === 1 ? 600 : 400;
+          const SECTION_W = 560;
+          const imgW = Math.max(100, Math.min(BASE_W, (SECTION_W - GAP * (count - 1)) / count));
+          const imgH = Math.floor(imgW * 9 / 16);
+          const color = RANK_COLOR[rank] ?? "#fff";
+          const nameFontSize = rank === 1
+            ? Math.max(16, 28 - (count - 1) * 3)
+            : Math.max(14, 22 - (count - 1) * 2);
+          const scoreFontSize = rank === 1 ? 20 : 16;
 
-        {first && (
-          <PodiumTeam
-            entry={first}
-            rank={1}
-            dataUrl={dataUrlMap.get(first.teamId) ?? null}
-            imgWidth={640}
-            imgHeight={360}
-            nameFontSize={34}
-            scoreFontSize={26}
-          />
-        )}
+          return (
+            <div
+              key={rank}
+              style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+            >
+              {/* 順位ラベルはグループで1つ */}
+              <div
+                style={{
+                  fontSize: rank === 1 ? 36 : 28,
+                  fontWeight: 900,
+                  color,
+                  textShadow: `0 0 20px ${color}`,
+                  letterSpacing: 2,
+                }}
+              >
+                {RANK_LABEL[rank]}
+              </div>
 
-        {third && (
-          <PodiumTeam
-            entry={third}
-            rank={3}
-            dataUrl={dataUrlMap.get(third.teamId) ?? null}
-            imgWidth={426}
-            imgHeight={240}
-            nameFontSize={28}
-            scoreFontSize={22}
-          />
-        )}
+              {/* 同順位チームを横並び */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: GAP }}>
+                {entries.map((entry) => {
+                  const dataUrl = dataUrlMap.get(entry.teamId) ?? null;
+                  return (
+                    <div
+                      key={entry.teamId}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}
+                    >
+                      <div
+                        style={{
+                          width: imgW,
+                          height: imgH,
+                          borderRadius: 12,
+                          border: `4px solid ${color}`,
+                          boxShadow: `0 0 30px ${color}80`,
+                          overflow: "hidden",
+                          background: "#1a1a2e",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {dataUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={dataUrl}
+                            alt={entry.teamName}
+                            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 40, color: "#555" }}>?</span>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: nameFontSize,
+                          fontWeight: 700,
+                          color: "#fff",
+                          textShadow: "0 2px 8px rgba(0,0,0,0.8)",
+                          textAlign: "center",
+                          maxWidth: imgW + 40,
+                        }}
+                      >
+                        {entry.teamName || "(不明)"}
+                      </div>
+                      <div style={{ fontSize: scoreFontSize, fontWeight: 600, color }}>
+                        {entry.total} pt
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* 4th+ table: 3行ごとに列を分割 */}
-      {rest.length > 0 && (() => {
+      {/* 4th+ table */}
+      {restWithRanks.length > 0 && (() => {
         const ROWS_PER_COL = 5;
-        const chunks: typeof rest[] = [];
-        for (let i = 0; i < rest.length; i += ROWS_PER_COL) {
-          chunks.push(rest.slice(i, i + ROWS_PER_COL));
+        const chunks: typeof restWithRanks[] = [];
+        for (let i = 0; i < restWithRanks.length; i += ROWS_PER_COL) {
+          chunks.push(restWithRanks.slice(i, i + ROWS_PER_COL));
         }
         return (
           <div
@@ -347,51 +313,48 @@ export default function ResultImageModal({
             {chunks.map((chunk, ci) => (
               <table key={ci} style={{ borderCollapse: "collapse" }}>
                 <tbody>
-                  {chunk.map((t, ri) => {
-                    const rank = ci * ROWS_PER_COL + ri + 4;
-                    return (
-                      <tr key={t.teamId}>
-                        <td
-                          style={{
-                            padding: "8px 16px 8px 0",
-                            fontSize: 18,
-                            fontWeight: 550,
-                            color: "#fff",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {rank}位
-                        </td>
-                        <td
-                          style={{
-                            padding: "8px 0",
-                            fontSize: 17,
-                            color: "#fff",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {(() => {
-                            const name = t.teamName || "(不明)";
-                            return name.length >= 22 ? name.slice(0, 22) + "..." : name;
-                          })()}
-                        </td>
-                        <td
-                          style={{
-                            padding: "8px 8px 8px 8px",
-                            fontSize: 15,
-                            color: "#fff",
-                            textAlign: "right",
-                            whiteSpace: "nowrap",
-                            ...(ci < chunks.length - 1 && {
-                              borderRight: "1px solid rgba(255,255,255)",
-                            }),
-                          }}
-                        >
-                          {t.total} pt
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {chunk.map((t) => (
+                    <tr key={t.teamId}>
+                      <td
+                        style={{
+                          padding: "8px 16px 8px 0",
+                          fontSize: 18,
+                          fontWeight: 550,
+                          color: "#fff",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {t.rank}位
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 0",
+                          fontSize: 17,
+                          color: "#fff",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {(() => {
+                          const name = t.teamName || "(不明)";
+                          return name.length >= 22 ? name.slice(0, 22) + "..." : name;
+                        })()}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 8px 8px 8px",
+                          fontSize: 15,
+                          color: "#fff",
+                          textAlign: "right",
+                          whiteSpace: "nowrap",
+                          ...(ci < chunks.length - 1 && {
+                            borderRight: "1px solid rgba(255,255,255)",
+                          }),
+                        }}
+                      >
+                        {t.total} pt
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             ))}

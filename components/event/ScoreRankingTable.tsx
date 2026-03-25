@@ -9,10 +9,17 @@ interface ScoreRankingTableProps {
   teamNoMap: Map<string, number>;
 }
 
+function calcTiedRanks(totals: TotalEntry[]): number[] {
+  return totals.map((t) =>
+    totals.filter((o) => o.total > t.total).length + 1
+  );
+}
+
 export default function ScoreRankingTable({
   totals,
   teamNoMap,
 }: ScoreRankingTableProps) {
+  const ranks = calcTiedRanks(totals);
   return (
     <section>
       <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
@@ -28,7 +35,7 @@ export default function ScoreRankingTable({
           >
             <div className="flex items-center gap-3">
               <span className="w-6 text-center text-base font-bold text-zinc-900 dark:text-zinc-50">
-                {index + 1}
+                {ranks[index]}
               </span>
               <span className="text-sm text-zinc-900 dark:text-zinc-50">
                 {t.teamName || "(不明)"}
@@ -59,7 +66,7 @@ export default function ScoreRankingTable({
           <tbody>
             {totals.map((t, index) => (
               <tr key={t.teamId} className={ROW_CLASS}>
-                <td className={TD_CLASS}>{index + 1}</td>
+                <td className={TD_CLASS}>{ranks[index]}</td>
                 <td className={TD_CLASS}>
                   {t.teamName || "(不明)"}
                   <span className="ml-1 text-sm">
