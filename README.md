@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ゲーム集計アプリ
 
-## Getting Started
+イベントごとにチームとスコアを管理し、ランキングや結果画像を生成できる Web アプリケーションです。
 
-First, run the development server:
+## 機能
+
+- **イベント管理** — イベントの作成・一覧表示・削除
+- **チーム管理** — チームメンバーの登録・チーム画像のアップロード
+- **スコア登録** — ゲームごとのチームスコアを入力
+- **ランキング表示** — 合計スコアによる自動ランキング算出（同点は同順位）
+- **結果画像の生成** — 結果をカード形式の画像として出力
+- **ユーザー管理** — ログイン認証・マイページ編集（管理者はユーザー一覧を参照可能）
+
+## 技術スタック
+
+| カテゴリ | 使用技術 |
+|---|---|
+| フレームワーク | Next.js 16 (App Router) |
+| 言語 | TypeScript |
+| UI | MUI (Material UI) v7 / Tailwind CSS v4 |
+| バックエンド | Supabase (PostgreSQL) |
+| 認証 | bcryptjs + jose (JWT) |
+| 画像生成 | html-to-image |
+| デプロイ | Vercel |
+
+## 環境構築
+
+### 前提条件
+
+- Node.js 20 以上
+- Supabase プロジェクト（テーブルの作成が必要）
+
+### セットアップ
+
+1. リポジトリをクローン
+
+```bash
+git clone <repository-url>
+cd game-totalling-app
+```
+
+2. 依存パッケージをインストール
+
+```bash
+npm install
+```
+
+3. 環境変数を設定
+
+`.env.local` を作成し、以下の変数を設定します。
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=<your-supabase-url>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
+SUPABASE_URL=<your-supabase-url>
+SUPABASE_ANON_KEY=<your-supabase-anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<your-supabase-service-role-key>
+```
+
+4. 開発サーバーを起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 主要ページ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| パス | 説明 |
+|---|---|
+| `/login` | ログイン画面 |
+| `/top` | イベント一覧 |
+| `/event/Regist` | イベント登録 |
+| `/event/[id]/score` | スコア一覧・ランキング・結果画像 |
+| `/event/[id]/score/[gameId]/regist` | スコア入力 |
+| `/event/[id]/team/regist` | チーム登録 |
+| `/users` | ユーザー管理（管理者のみ） |
+| `/users/[id]/edit` | マイページ |
 
-## Learn More
+## スクリプト
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev    # 開発サーバー起動
+npm run build  # プロダクションビルド
+npm run start  # プロダクションサーバー起動
+npm run lint   # ESLint 実行
+```
