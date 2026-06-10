@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import { getUserIdFromRequest } from "@/lib/auth";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -102,6 +103,11 @@ export async function POST(
       return json(500, { success: false, message: "Supabase設定が未完了です" });
     }
 
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return json(401, { success: false, message: "認証が必要です" });
+    }
+
     const { id } = await params;
     if (!id) {
       return json(400, { success: false, message: "event id が不正です" });
@@ -121,7 +127,12 @@ export async function POST(
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const teamRows = teams.map((t: any) => ({ name: t.name, event_id: id }));
+    const teamRows = teams.map((t: any) => ({
+      name: t.name,
+      event_id: id,
+      created_by: userId,
+      updated_by: userId,
+    }));
 
     const { data: insertedTeams, error: teamError } = await supabase
       .from("team_info")
@@ -133,7 +144,7 @@ export async function POST(
       return json(500, { success: false, message: "チーム登録に失敗しました" });
     }
 
-    const memberRows: { name: string; team_id: any }[] = [];
+    const memberRows: { name: string; team_id: any; created_by: string; updated_by: string }[] = [];
     (insertedTeams ?? []).forEach((t: any, index: number) => {
       const src = teams[index];
       if (!src) return;
@@ -141,7 +152,7 @@ export async function POST(
         (m) => typeof m === "string" && m.trim() !== ""
       );
       for (const m of members) {
-        memberRows.push({ name: m.trim(), team_id: t.id });
+        memberRows.push({ name: m.trim(), team_id: t.id, created_by: userId, updated_by: userId });
       }
     });
 
@@ -171,6 +182,11 @@ export async function PUT(
       return json(500, { success: false, message: "Supabase設定が未完了です" });
     }
 
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return json(401, { success: false, message: "認証が必要です" });
+    }
+
     const { id } = await params;
     if (!id) {
       return json(400, { success: false, message: "event id が不正です" });
@@ -197,7 +213,7 @@ export async function PUT(
     for (const t of existing) {
       const { error } = await supabase
         .from("team_info")
-        .update({ name: t.name })
+        .update({ name: t.name, updated_by: userId })
         .eq("id", t.id)
         .eq("event_id", id);
       if (error) {
@@ -221,7 +237,12 @@ export async function PUT(
       if (members.length > 0) {
         const { error: insError } = await supabase
           .from("member_info")
-          .insert(members.map((m) => ({ name: m.trim(), team_id: t.id })));
+          .insert(members.map((m) => ({
+            name: m.trim(),
+            team_id: t.id,
+            created_by: userId,
+            updated_by: userId,
+          })));
         if (insError) {
           console.error("Supabase error on member_info insert:", insError);
           return json(500, { success: false, message: "メンバー更新に失敗しました" });
@@ -234,7 +255,12 @@ export async function PUT(
     if (newTeams.length > 0) {
       const { data: inserted, error: teamError } = await supabase
         .from("team_info")
-        .insert(newTeams.map((t: any) => ({ name: t.name, event_id: id })))
+        .insert(newTeams.map((t: any) => ({
+          name: t.name,
+          event_id: id,
+          created_by: userId,
+          updated_by: userId,
+        })))
         .select("id,name");
 
       if (teamError) {
@@ -244,7 +270,7 @@ export async function PUT(
 
       insertedNewTeams = inserted ?? [];
 
-      const memberRows: { name: string; team_id: any }[] = [];
+      const memberRows: { name: string; team_id: any; created_by: string; updated_by: string }[] = [];
       insertedNewTeams.forEach((t: any, index: number) => {
         const src = newTeams[index];
         if (!src) return;
@@ -252,7 +278,7 @@ export async function PUT(
           (m) => typeof m === "string" && m.trim() !== ""
         );
         for (const m of members) {
-          memberRows.push({ name: m.trim(), team_id: t.id });
+          memberRows.push({ name: m.trim(), team_id: t.id, created_by: userId, updated_by: userId });
         }
       });
 

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import { getUserIdFromRequest } from "@/lib/auth";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -27,9 +28,6 @@ export async function GET(
 
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // NOTE:
-    // score_info と team_info の間にFKが無い場合、PostgRESTの埋め込み(select team_info(...))は失敗する。
-    // そのため、score_info を取得→team_info を id IN (...) で取得→サーバー側で結合する。
     const { data, error } = await supabase
       .from("score_info")
       .select("score,game_id,team_id")
@@ -66,7 +64,6 @@ export async function GET(
       const { data: teams, error: teamsError } = await supabase
         .from("team_info")
         .select("id,name")
-        // PostgRESTの in は配列OK
         .in("id", teamIds as any);
 
       if (teamsError) {
@@ -108,6 +105,11 @@ export async function POST(
       return json(500, { success: false, message: "Supabase設定が未完了です" });
     }
 
+    const userId = await getUserIdFromRequest(req);
+    if (!userId) {
+      return json(401, { success: false, message: "認証が必要です" });
+    }
+
     const { id } = await params;
     if (!id) {
       return json(400, { success: false, message: "event id が不正です" });
@@ -141,6 +143,8 @@ export async function POST(
         game_id,
         team_id: s.team_id,
         score: s.score,
+        created_by: userId,
+        updated_by: userId,
       }));
 
     if (rowsToInsert.length === 0) {
@@ -173,4 +177,3 @@ export async function POST(
     return json(500, { success: false, message: "サーバーエラー" });
   }
 }
-

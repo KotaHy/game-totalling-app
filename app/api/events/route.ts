@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import { getUserIdFromRequest, ADMIN_USER_ID } from "@/lib/auth";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -11,7 +12,7 @@ function json(status: number, body: unknown) {
     });
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
     try {
         if (!supabaseUrl) {
             return json(500, {
@@ -26,12 +27,23 @@ export async function GET(_req: NextRequest) {
             });
         }
 
+        const userId = await getUserIdFromRequest(req);
+        if (!userId) {
+            return json(401, { success: false, message: "認証が必要です" });
+        }
+
         const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-        const { data, error } = await supabase
+        let query = supabase
             .from("mt_event_info")
             .select("id,name,execute_date")
             .order("execute_date", { ascending: true });
+
+        if (userId !== ADMIN_USER_ID) {
+            query = query.or(`created_by.eq.${userId},updated_by.eq.${userId}`);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             console.error("Supabase error on mt_event_info select:", {
@@ -65,6 +77,11 @@ export async function POST(req: NextRequest) {
             });
         }
 
+        const userId = await getUserIdFromRequest(req);
+        if (!userId) {
+            return json(401, { success: false, message: "認証が必要です" });
+        }
+
         let payload: any;
         try {
             payload = await req.json();
@@ -85,7 +102,7 @@ export async function POST(req: NextRequest) {
 
         const { data, error } = await supabase
             .from("mt_event_info")
-            .insert({ name: name.trim(), execute_date })
+            .insert({ name: name.trim(), execute_date, created_by: userId, updated_by: userId })
             .select("id")
             .single();
 
@@ -105,4 +122,3 @@ export async function POST(req: NextRequest) {
         return json(500, { success: false, message: "サーバーエラー" });
     }
 }
-
